@@ -3,7 +3,7 @@
 set -e
 
 version="0.1.0-a1"
-rev="effab78639c48a0f8ee6f74a1a01580bfbc43c39"
+rev="fe3a8e759573034ec7aa304dd6a31904efb04fc8"
 
 cat <<"EOF"
       __      __                         
