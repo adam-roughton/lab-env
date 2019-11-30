@@ -44,8 +44,8 @@ let
 
   pyspark-kernel = jupyterWith.kernels.iPythonWith {
     name = "pyspark-${spark.sparkVersion}";
-    packages = p: with p; [ 
-      ipykernel.overridePythonAttrs(oldAttrs: {
+    packages = p: (pythonPackages p) ++ [ 
+      p.ipykernel.overridePythonAttrs(oldAttrs: {
         makeWrapperArgs = [ 
           "--prefix PYTHONPATH : ${spark.sparkHome}/python/" 
           "--prefix PYTHONPATH : ${spark.sparkHome}/python/lib/py4j*zip"

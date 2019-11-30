@@ -3,6 +3,7 @@
   stdenv,
   lib,
   maven,
+  xmlstarlet,
   jre_headless,
   jdk,
   coreutils,
@@ -11,7 +12,7 @@
   nettools,
   runCommand,
   makeWrapper,
-  python3
+  python3,
 }:
 
 with sparkDefinition;
@@ -21,6 +22,7 @@ let
   hadoopQualifier = if hadoop != null then "without-hadoop" else "hadoop${hadoopVersion}";
   sparkName = "spark-${sparkVersion}-${hadoopQualifier}_${scalaVersionMajorMinor}";
   hadoopResolvedVersion = if hadoop != null then "${hadoop.version}" else hadoopVersion;
+  python = if sparkDefinition.python != null then sparkDefinition.python else python3;
 
   readDirAsList = dir: builtins.map (f: "${dir}/${f}") (builtins.attrNames (builtins.readDir "${dir}"));
   
@@ -28,7 +30,10 @@ let
     name = "${sparkName}";
     inherit src sparkVersion scalaVersion;
     
-    pythonVersion = "${python3.version}";
+    nativeBuildInputs = [ maven jdk makeWrapper xmlstarlet ];
+    buildInputs = [ jre_headless ];
+    
+    pythonVersion = "${python.version}";
 
     spark-dist-jars = runCommand "${sparkName}-dist-classpath" {} ''
       mkdir -p "$out/jars"
@@ -44,10 +49,7 @@ let
 
     spark-dist-classpath = readDirAsList "${spark-dist-jars}/jars";
 
-    nativeBuildInputs = [ maven jdk makeWrapper ];
-    buildInputs = [ jre_headless ];
-
-    mavenFlags = "-DskipTests -Pscala-${scalaVersionMajorMinor} ";
+    mavenFlags = "-DskipTests -Pscala-${scalaVersionMajorMinor} -Dhadoop.version=${hadoopVersion} -P${hadoopProfile} ";
     mavenOpts = "-Xmx2g -XX:ReservedCodeCacheSize=512m";
 
     postUnpack = ''
@@ -55,12 +57,12 @@ let
     patchShebangs $sourceRoot/build
     $sourceRoot/dev/change-scala-version.sh ${scalaVersionMajorMinor}
 
-    sed -i 's:<useZincServer>.*</useZincServer>:<useZincServer>false</useZincServer>:' \
-       $sourceRoot/pom.xml
-    sed -i 's:<scala\.version>.*</scala\.version>:<scala\.version>${scalaVersion}</scala\.version>:' \
-       $sourceRoot/pom.xml
+    xmlstarlet ed -L \
+    -u '//_:useZincServer' -v "false" \
+    -u '//_:scala.version' -v ${scalaVersion} \
+    $sourceRoot/pom.xml
     '';
-
+    
     # inspired by pkgs/applications/networking/cluster/hadoop/default.nix
     dependencies = stdenv.mkDerivation {
       name = "${sparkName}-deps";
@@ -75,9 +77,10 @@ let
         export MAVEN_OPTS="${mavenOpts}"
 
         while mvn package \
-           -Dhadoop.version=${hadoopVersion} \
            -Pyarn \
            -Pmesos \
+           -Pkubernetes \
+           -Phadoop-cloud \
            -Dmaven.repo.local=$out/.m2 ${mavenFlags} \
            -Dmaven.wagon.rto=5000; [ $? = 1 ]; do
           echo "timeout, restart maven to continue downloading"
@@ -108,13 +111,11 @@ let
       mvn package \
         --offline \
         -Dmaven.repo.local=$PWD/.m2 \
-        ${if hadoop != null 
-          then 
-          "-Phadoop-provided -Dhadoop.version=${hadoopVersion}" 
-          else 
-          "-Dhadoop.version=${hadoopVersion}"
+        ${if hadoop != null then "-Phadoop-provided" else ""
         } ${if withYarn then ''-Pyarn'' else ""
         } ${if withMesos then ''-Pmesos'' else ""
+        } ${if withKubernetes then ''-Pkubernetes'' else ""
+        } ${if withHadoopCloud then ''-Phadoop-cloud'' else ""
         } ${mavenFlags}
     '';
 
@@ -177,8 +178,8 @@ let
       cat > $SPARK_HOME/conf/spark-env.sh <<-EOF
       export SPARK_HOME="$SPARK_HOME"
       export JAVA_HOME="$JAVA_HOME"
-      export PYSPARK_PYTHON="${python3}/bin/python"
-      export PYSPARK_DRIVER_PYTHON="${python3}/bin/python"
+      export PYSPARK_PYTHON="${python}/bin/python"
+      export PYSPARK_DRIVER_PYTHON="${python}/bin/python"
       export PYTHONPATH="\$PYTHONPATH:$SPARK_HOME/python/:$SPARK_HOME/python/lib/"
       export SPARK_DIST_CLASSPATH="${lib.concatStringsSep ":" spark-dist-classpath}" 
       EOF

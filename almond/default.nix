@@ -16,7 +16,7 @@ let
   }.${scalaVersionMajorMinor};
 
   coursier-standalone-jar = builtins.fetchurl {
-     url = "http://repo1.maven.org/maven2/io/get-coursier/coursier-cli_2.12/1.1.0-M14/coursier-cli_2.12-1.1.0-M14-standalone.jar";
+     url = "https://repo1.maven.org/maven2/io/get-coursier/coursier-cli_2.12/1.1.0-M14/coursier-cli_2.12-1.1.0-M14-standalone.jar";
      sha256 = "055iq6dpf7d3j4gygnn71a5hh1n86kjixsns5bxafqmz0s0gfmj2";
   };
   coursier-standalone = writeShellScriptBin "coursier-standalone" ''

@@ -25,22 +25,40 @@ let
     },
     sparkVersion,
     scalaVersion ? scalaDefaultVersion,
-    hadoopVersion ? hadoopDefaultVersion,
+    hadoop ? null,
+    hadoopVersion ? if hadoop != null then "${hadoop.version}" else hadoopDefaultVersion,
+    hadoopProfile ? (
+      let 
+        hadoopMajorMinor = lib.versions.majorMinor hadoopVersion;
+      in
+      (if lib.versionAtLeast hadoopMajorMinor "3.1" then 
+        "hadoop-3.1" 
+      else 
+        (if lib.versionAtLeast hadoopMajorMinor "2.7" then 
+           "hadoop-2.7" 
+         else 
+           "hadoop-2.6"
+        )
+      )
+    ),
     dependencies-sha256 ? find-dependency-sha { 
       inherit sparkVersion hadoopVersion; 
       scalaVersionMajorMinor = "${lib.versions.majorMinor scalaVersion}";
     },
-    hadoop ? null,
     withYarn ? true,
     withMesos ? false,
+    withHadoopCloud ? false,
+    withKubernetes ? false,
     extraDriverJars ? [],
     extraSparkJars ? [],
-    log4jProperties ? null
+    log4jProperties ? null,
+    python ? null 
   }: callPackage ./spark-builder.nix {
     sparkDefinition = { 
       inherit src dependencies-sha256 sparkVersion scalaVersion 
-      hadoopVersion hadoop withYarn withMesos extraDriverJars 
-      extraSparkJars log4jProperties; 
+      hadoopVersion hadoop withYarn withMesos withHadoopCloud 
+      hadoopProfile withKubernetes extraDriverJars 
+      extraSparkJars log4jProperties python; 
     };
   };
 

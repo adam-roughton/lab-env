@@ -1,9 +1,21 @@
 [
   {
+    "spark": "2.4.4",
+    "scala": "2.12",
+    "hadoop": "2.9.2",
+    "sha256": "0z5fps3nvagg3fdgk0dwdch20p388bnzlrh4fdgarny3n2zazvkp"
+  },
+  {
+    "spark": "2.4.4",
+    "scala": "2.11",
+    "hadoop": "2.9.2",
+    "sha256": "10djprqlgldrq5n264ygn1816jn12ymwza6firih79a3y5x8wh4l"
+  },
+  {
     "spark": "2.4.3",
     "scala": "2.12",
     "hadoop": "2.9.2",
-    "sha256": "1kilm6mifsg6nszxxrmwhnbnxrqs5kghpl1k8dpwcwa13n9q0brk"
+    "sha256": "09p8shn48vdnlgzxm1dhsj1pmys99rix0mzx54py6mb0a52l0md3"
   }, 
   {
     "spark": "2.4.3",
