@@ -31,8 +31,8 @@ let
       let 
         hadoopMajorMinor = lib.versions.majorMinor hadoopVersion;
       in
-      (if lib.versionAtLeast hadoopMajorMinor "3.1" then 
-        "hadoop-3.1" 
+      (if lib.versionAtLeast hadoopMajorMinor "3.2" then 
+        "hadoop-3.2" 
       else 
         (if lib.versionAtLeast hadoopMajorMinor "2.7" then 
            "hadoop-2.7" 
